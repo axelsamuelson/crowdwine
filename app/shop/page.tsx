@@ -18,13 +18,28 @@ export default async function ShopPage({
     getCollections()
   ])
 
+  // Hämta pall-data från vår egen API
+  let pallets = []
+  try {
+    const palletsResponse = await fetch('/api/pallets', {
+      cache: 'no-store'
+    })
+    if (palletsResponse.ok) {
+      const palletsData = await palletsResponse.json()
+      pallets = palletsData.pallets || []
+    }
+  } catch (error) {
+    console.error('Failed to fetch pallets:', error)
+  }
+
   return (
     <div className="space-y-6">
-      <ProductList 
-        collection="joyco-root" 
+      <ProductList
+        collection="joyco-root"
         searchParams={searchParams}
         initialWines={wines}
         initialCollections={collections}
+        initialPallets={pallets}
       />
     </div>
   )

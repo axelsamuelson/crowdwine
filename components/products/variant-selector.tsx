@@ -260,11 +260,12 @@ export const useProductImages = (product: Product | CartProduct, selectedOptions
     return defaultImages;
   }
 
-  // Final fallback to featured image
-  if (featuredImage) {
+  // Final fallback to featured image (only if it has a valid URL)
+  if (featuredImage && featuredImage.url && featuredImage.url.trim() !== '') {
     return [featuredImage];
   }
 
-  // Ultimate fallback - return first image or empty array
-  return images.length > 0 ? [images[0]] : [];
+  // Ultimate fallback - return first image with valid URL or empty array
+  const validImages = images.filter(image => image.url && image.url.trim() !== '');
+  return validImages.length > 0 ? [validImages[0]] : [];
 };
