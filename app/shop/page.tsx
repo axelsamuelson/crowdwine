@@ -7,8 +7,8 @@ import { ProductGrid } from './components/product-grid';
 import { ProductCardSkeleton } from './components/product-card-skeleton';
 
 export const metadata: Metadata = {
-  title: 'ACME Store | Shop',
-  description: 'ACME Store, your one-stop shop for all your needs.',
+  title: 'Wine Store | Shop',
+  description: 'Discover exceptional wines from renowned producers around the world.',
 };
 
 // Enable ISR with 1 minute revalidation

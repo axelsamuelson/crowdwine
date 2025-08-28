@@ -1,12 +1,13 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { Product } from '@/lib/data';
+import { Product } from '@/lib/shopify/types';
 import { AddToCart, AddToCartButton } from '@/components/cart/add-to-cart';
 import { formatPrice } from '@/lib/utils';
 import { VariantSelector } from '../variant-selector';
 import { ProductImage } from './product-image';
 import { Button } from '@/components/ui/button';
-import { ArrowRightIcon } from 'lucide-react';
+import { ArrowRightIcon, Wine, Calendar } from 'lucide-react';
+import { WinePalletStatusCompact } from '@/components/wine-pallet-status';
 
 export const ProductCard = ({ product }: { product: Product }) => {
   const hasNoOptions = product.options.length === 0;
@@ -15,12 +16,17 @@ export const ProductCard = ({ product }: { product: Product }) => {
 
   const renderInCardAddToCart = hasNoOptions || hasOneOptionWithOneValue || justHasColorOption;
 
+  // Hitta vin-specifika fält
+  const wineType = product.tags.find(tag => ['Red', 'White', 'Rosé', 'Sparkling', 'Dessert'].includes(tag)) || '';
+  const vintage = product.tags.find(tag => /^\d{4}$/.test(tag)) || '';
+  const region = product.tags.find(tag => !['Red', 'White', 'Rosé', 'Sparkling', 'Dessert'].includes(tag) && !/^\d{4}$/.test(tag)) || '';
+
   return (
     <div className="relative w-full aspect-[3/4] md:aspect-square bg-muted group overflow-hidden">
       <Link
         href={`/product/${product.handle}`}
         className="block size-full focus-visible:outline-none"
-        aria-label={`View details for ${product.title}, price ${product.priceRange.minVariantPrice}`}
+        aria-label={`View details for ${product.title}, price ${product.priceRange.minVariantPrice.amount}`}
         prefetch
       >
         <Suspense fallback={null}>
@@ -53,6 +59,33 @@ export const ProductCard = ({ product }: { product: Product }) => {
                 </span>
               )}
             </div>
+
+            {/* Wine-specific info */}
+            <div className="col-span-2 space-y-2">
+              {wineType && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Wine className="h-4 w-4" />
+                  <span>{wineType}</span>
+                </div>
+              )}
+              {vintage && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>{vintage}</span>
+                </div>
+              )}
+              {region && (
+                <div className="text-sm text-muted-foreground">
+                  <span>{region}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Pallet Status */}
+            <div className="col-span-2">
+              <WinePalletStatusCompact wineId={product.id} />
+            </div>
+
             {renderInCardAddToCart ? (
               <Suspense fallback={null}>
                 <div className="self-center">
@@ -71,7 +104,7 @@ export const ProductCard = ({ product }: { product: Product }) => {
               <Button className="col-start-2" size="sm" variant="default" asChild>
                 <Link href={`/product/${product.handle}`}>
                   <div className="flex justify-between items-center w-full">
-                    <span>View Product</span>
+                    <span>View Wine</span>
                     <ArrowRightIcon />
                   </div>
                 </Link>
