@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { getCollection, getProduct, getProducts } from '@/lib/data';
+import { getWine, getWines, getCollections } from '@/lib/supabase/adapters';
 import { HIDDEN_PRODUCT_TAG } from '@/lib/constants';
 import {
   Breadcrumb,
@@ -27,13 +27,13 @@ import { DesktopGallery } from './components/desktop-gallery';
 // Generate static params for all products at build time
 export async function generateStaticParams() {
   try {
-    const products = await getProducts({ limit: 100 }); // Get first 100 products
+    const wines = await getWines({ limit: 100 }); // Get first 100 wines
 
-    return products.map(product => ({
-      handle: product.handle,
+    return wines.map(wine => ({
+      handle: wine.handle,
     }));
   } catch (error) {
-    console.error('Error generating static params for products:', error);
+    console.error('Error generating static params for wines:', error);
     return [];
   }
 }
@@ -43,7 +43,7 @@ export const revalidate = 60;
 
 export async function generateMetadata(props: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const params = await props.params;
-  const product = await getProduct(params.handle);
+  const product = await getWine(params.handle);
 
   if (!product) return notFound();
 
@@ -78,11 +78,15 @@ export async function generateMetadata(props: { params: Promise<{ handle: string
 
 export default async function ProductPage(props: { params: Promise<{ handle: string }> }) {
   const params = await props.params;
-  const product = await getProduct(params.handle);
+  const product = await getWine(params.handle);
 
   if (!product) return notFound();
 
-  const collection = product.categoryId ? await getCollection(product.categoryId) : null;
+  // Find collection for this wine (we'll need to get collections and find matching one)
+  const collections = await getCollections();
+  const collection = collections.find(c => 
+    product.tags.some(tag => c.handle.includes(tag.toLowerCase()) || tag.toLowerCase().includes(c.handle))
+  ) || null;
 
   const productJsonLd = {
     '@context': 'https://schema.org',

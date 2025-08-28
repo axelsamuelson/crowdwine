@@ -9,28 +9,52 @@ import { useEffect, useState } from 'react'
 interface ProductListProps {
   collection: string
   searchParams?: { [key: string]: string | string[] | undefined }
+  initialWines?: Product[]
+  initialCollections?: Collection[]
 }
 
-export default function ProductList({ collection, searchParams }: ProductListProps) {
+export default function ProductList({ 
+  collection, 
+  searchParams, 
+  initialWines = [], 
+  initialCollections = [] 
+}: ProductListProps) {
   const query = typeof searchParams?.q === 'string' ? searchParams.q : undefined
   const sort = typeof searchParams?.sort === 'string' ? searchParams.sort : undefined
   const isRootCollection = collection === 'joyco-root' || !collection
 
   const { sortKey, reverse } = isRootCollection ? mapSortKeys(sort, 'product') : mapSortKeys(sort, 'collection')
 
-  // Hämta viner från Supabase
-  const { wines: products, loading: winesLoading, error: winesError } = useWines({
+  // Använd initial data om tillgängligt, annars använd hooks
+  const [products, setProducts] = useState<Product[]>(initialWines)
+  const [collections, setCollections] = useState<Collection[]>(initialCollections)
+  const [loading, setLoading] = useState(initialWines.length === 0)
+  const [error, setError] = useState<string | null>(null)
+
+  // Om vi inte har initial data, använd hooks
+  const { wines: hookWines, loading: winesLoading, error: winesError } = useWines({
     query,
     sortKey,
     reverse,
     collection: isRootCollection ? undefined : collection
   })
 
-  // Hämta collections från Supabase
-  const { collections, loading: collectionsLoading, error: collectionsError } = useCollections()
+  const { collections: hookCollections, loading: collectionsLoading, error: collectionsError } = useCollections()
+
+  useEffect(() => {
+    // Uppdatera state när hooks returnerar data
+    if (hookWines.length > 0) {
+      setProducts(hookWines)
+    }
+    if (hookCollections.length > 0) {
+      setCollections(hookCollections)
+    }
+    setLoading(winesLoading || collectionsLoading)
+    setError(winesError || collectionsError)
+  }, [hookWines, hookCollections, winesLoading, collectionsLoading, winesError, collectionsError])
 
   // Loading state
-  if (winesLoading || collectionsLoading) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
@@ -52,14 +76,14 @@ export default function ProductList({ collection, searchParams }: ProductListPro
   }
 
   // Error state
-  if (winesError || collectionsError) {
+  if (error) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          {winesError ? 'Failed to load wines' : 'Failed to load collections'}
+          Failed to load data
         </h3>
         <p className="text-gray-600">
-          {winesError || collectionsError}
+          {error}
         </p>
       </div>
     )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -112,6 +112,38 @@ export default function AdminPage() {
   
   const { toast } = useToast()
 
+  // Load data on component mount
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const loadData = async () => {
+    try {
+      // Load collections
+      const collectionsResponse = await fetch('/api/collections')
+      if (collectionsResponse.ok) {
+        const collectionsData = await collectionsResponse.json()
+        setCollections(collectionsData.collections || [])
+      }
+
+      // Load producers
+      const producersResponse = await fetch('/api/producers')
+      if (producersResponse.ok) {
+        const producersData = await producersResponse.json()
+        setProducers(producersData.producers || [])
+      }
+
+      // Load wines
+      const winesResponse = await fetch('/api/wines')
+      if (winesResponse.ok) {
+        const winesData = await winesResponse.json()
+        setWines(winesData.wines || [])
+      }
+    } catch (error) {
+      console.error('Error loading data:', error)
+    }
+  }
+
   const setupDatabase = async () => {
     setIsSettingUp(true)
     try {
@@ -126,6 +158,8 @@ export default function AdminPage() {
           description: "Database setup completed successfully!",
         })
         setSetupResult(result)
+        // Reload data after setup
+        await loadData()
       } else {
         toast({
           title: "Error",
@@ -153,12 +187,21 @@ export default function AdminPage() {
       })
       
       if (response.ok) {
+        const result = await response.json()
         toast({
           title: "Success!",
           description: "Collection added successfully!",
         })
         setNewCollection({ title: '', handle: '', description: '', seo_title: '', seo_description: '' })
-        // Här skulle vi uppdatera collections-listan
+        // Reload collections
+        await loadData()
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Error",
+          description: error.error || "Failed to add collection",
+          variant: "destructive"
+        })
       }
     } catch (error) {
       toast({
@@ -178,12 +221,21 @@ export default function AdminPage() {
       })
       
       if (response.ok) {
+        const result = await response.json()
         toast({
           title: "Success!",
           description: "Producer added successfully!",
         })
         setNewProducer({ name: '', handle: '', description: '', country: '', region: '', website: '' })
-        // Här skulle vi uppdatera producers-listan
+        // Reload producers
+        await loadData()
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Error",
+          description: error.error || "Failed to add producer",
+          variant: "destructive"
+        })
       }
     } catch (error) {
       toast({
@@ -210,6 +262,7 @@ export default function AdminPage() {
       })
       
       if (response.ok) {
+        const result = await response.json()
         toast({
           title: "Success!",
           description: "Wine added successfully!",
@@ -233,7 +286,15 @@ export default function AdminPage() {
           min_pallet_orders: 1,
           max_pallet_orders: 10
         })
-        // Här skulle vi uppdatera wines-listan
+        // Reload wines
+        await loadData()
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Error",
+          description: error.error || "Failed to add wine",
+          variant: "destructive"
+        })
       }
     } catch (error) {
       toast({
@@ -258,6 +319,7 @@ export default function AdminPage() {
       })
       
       if (response.ok) {
+        const result = await response.json()
         toast({
           title: "Success!",
           description: "Wine variant added successfully!",
@@ -269,7 +331,15 @@ export default function AdminPage() {
           bottle_size: '750ml',
           available_for_sale: true
         })
-        // Här skulle vi uppdatera variants-listan
+        // Reload variants
+        await loadData()
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Error",
+          description: error.error || "Failed to add wine variant",
+          variant: "destructive"
+        })
       }
     } catch (error) {
       toast({
@@ -379,6 +449,40 @@ export default function AdminPage() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Existing Collections */}
+          {collections.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Existing Collections ({collections.length})</CardTitle>
+                <CardDescription>Collections currently in the system</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {collections.map((collection) => (
+                    <div key={collection.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-semibold">{collection.title}</h4>
+                        <p className="text-sm text-gray-600">{collection.handle}</p>
+                        {collection.description && (
+                          <p className="text-sm text-gray-500 mt-1">{collection.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          collection.is_active 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {collection.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Producers Tab */}
@@ -452,6 +556,44 @@ export default function AdminPage() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Existing Producers */}
+          {producers.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Existing Producers ({producers.length})</CardTitle>
+                <CardDescription>Producers currently in the system</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {producers.map((producer) => (
+                    <div key={producer.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-semibold">{producer.name}</h4>
+                        <p className="text-sm text-gray-600">{producer.handle}</p>
+                        {producer.description && (
+                          <p className="text-sm text-gray-500 mt-1">{producer.description}</p>
+                        )}
+                        <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                          {producer.country && <span>🌍 {producer.country}</span>}
+                          {producer.region && <span>📍 {producer.region}</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          producer.is_active 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {producer.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Wines Tab */}
@@ -617,6 +759,55 @@ export default function AdminPage() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Existing Wines */}
+          {wines.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Existing Wines ({wines.length})</CardTitle>
+                <CardDescription>Wines currently in the system</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {wines.map((wine) => (
+                    <div key={wine.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <h4 className="font-semibold">{wine.title}</h4>
+                        <p className="text-sm text-gray-600">{wine.handle}</p>
+                        {wine.description && (
+                          <p className="text-sm text-gray-500 mt-1">{wine.description}</p>
+                        )}
+                        <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                          {wine.vintage && <span>🍷 {wine.vintage}</span>}
+                          {wine.wine_type && <span>🔴 {wine.wine_type}</span>}
+                          {wine.bottles_per_pallet && <span>📦 {wine.bottles_per_pallet} bottles/pallet</span>}
+                          {wine.price_range_min > 0 && (
+                            <span>💰 {wine.price_range_min} - {wine.price_range_max} SEK</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          wine.is_active 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {wine.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          wine.available_for_sale 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {wine.available_for_sale ? 'For Sale' : 'Not for Sale'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Variants Tab */}
